@@ -1,0 +1,22 @@
+[project]
+name = "el-fantasy-data-pipeline"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Milos Marinkovic"}
+]
+license = {text = "Apache License 2.0"}
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "requests (>=2.32.3,<3.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "boto3 (>=1.37.17,<2.0.0)",
+    "numpy (>=2.2.4,<3.0.0)",
+    "pyyaml (>=6.0.2,<7.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
