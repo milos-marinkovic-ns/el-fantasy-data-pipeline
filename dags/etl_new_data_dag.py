@@ -13,6 +13,8 @@ default_args = {
 
 def fetch_new_data():
     print("Fetching new data...")
+    edc = EuroleagueDataConnector()
+    edc.fetch_new_box_score_data()
 
 
 def transform_new_data():
@@ -21,9 +23,9 @@ def transform_new_data():
 with DAG(
     dag_id='euroleague_etl_new_data',
     default_args=default_args,
-    description='ETL tasks for Euroleague data every 3 days',
-    schedule_interval=timedelta(days=3),
-    start_date=datetime(2025, 3, 22),
+    description='ETL tasks for Euroleague data every 5 days',
+    schedule_interval=timedelta(days=5),
+    start_date=datetime(2025, 3, 22, 0, 0),
     catchup=False,
 ) as dag:
 

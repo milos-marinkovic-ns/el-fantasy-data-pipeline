@@ -28,12 +28,12 @@ with DAG(
 )  as dag:
 
     task_fetch_old = PythonOperator(
-        task_id='fetch_new_data',
+        task_id='fetch_old_data',
         python_callable=fetch_old_data
     )
 
     task_transform_old = PythonOperator(
-        task_id='transform_new_data',
+        task_id='transform_old_data',
         python_callable=transform_old_data
     )
 

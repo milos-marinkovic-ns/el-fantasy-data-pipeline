@@ -20,24 +20,37 @@ class FetchResult:
 
 class EuroleagueDataConnector:
 
+    # S3 bucket where both boxscore data and configs are stored.
     boxscore_s3_bucket_name: str = "euroleague-boxscore-data" 
-    old_box_score_config_path: str = os.path.join(base_dir, "configs", "old_box_score_data_config.yaml")
-    new_box_score_config_path: str = os.path.join(base_dir, "configs", "new_box_score_data_config.yaml")
+
+    # S3 keys for the configuration files
+    old_box_score_config_key: str = "configs/old_box_score_data_config.yaml"
+    new_box_score_config_key: str = "configs/new_box_score_data_config.yaml"
 
     def __init__(self):
+
+        self.s3 = boto3.client('s3')
+
+
         # Load data old config
         try:
-            with open(self.old_box_score_config_path, "r") as file:
-                old_box_score_config: dict = yaml.safe_load(file)
+            old_obj = self.s3.get_object(
+                Bucket=self.boxscore_s3_bucket_name, 
+                Key=self.old_box_score_config_key
+            )
+            old_box_score_config: dict = yaml.safe_load(old_obj['Body'].read())
         except Exception as e:
-            raise Exception(f"Error loading old data config: {e}")
+            raise Exception(f"Error loading old data config from S3: {e}")
         
         # Load data new config
         try:
-            with open(self.new_box_score_config_path, "r") as file:
-                new_box_score_config: dict = yaml.safe_load(file)
+            new_obj = self.s3.get_object(
+                Bucket=self.boxscore_s3_bucket_name, 
+                Key=self.new_box_score_config_key
+            )
+            new_box_score_config: dict = yaml.safe_load(new_obj['Body'].read())
         except Exception as e:
-            raise Exception(f"Error loading new data config: {e}")
+            raise Exception(f"Error loading new data config from S3: {e}")
         
         self.box_score_base_url: str = old_box_score_config["euroleague_api_config"]["box_score_base_url"]
         self.seasons_games: list[list[str]] = old_box_score_config["euroleague_api_config"]["box_score_queries"]
@@ -92,21 +105,32 @@ class EuroleagueDataConnector:
         If parameters are not provided, keep existing values.
         """
         try:
-            # Load the existing config
-            with open(self.new_box_score_config_path, "r") as file:
-                config: dict = yaml.safe_load(file)
+            # Load the existing new config from S3
+            obj = self.s3.get_object(
+                Bucket=self.boxscore_s3_bucket_name, 
+                Key=self.new_box_score_config_key
+            )
+            config: dict = yaml.safe_load(obj['Body'].read())
 
             if current_season is not None:
                 config['current_season'] = current_season
             if last_fetched_id is not None:
                 config['last_fetched_id'] = str(last_fetched_id)
 
-            with open(self.new_box_score_config_path, "w") as file:
-                yaml.dump(config, file, default_flow_style=False)
+            # Convert the updated config back to YAML
+            new_yaml = yaml.dump(config, default_flow_style=False)
+            # Save the updated YAML back to S3
+            self.s3.put_object(
+                Bucket=self.boxscore_s3_bucket_name, 
+                Key=self.new_box_score_config_key, 
+                Body=new_yaml, 
+                ContentType='application/x-yaml'
+            )
             return True
         except Exception as e:
-            print(f"Error updating data config: {e}")
+            print(f"Error updating data config on S3: {e}")
             return False
+
     
     def fetch_new_box_score_data(self) -> List[FetchResult]:
         """
@@ -126,6 +150,7 @@ class EuroleagueDataConnector:
                     break
             else:
                 print(f"Stopping fetch_new_box_score_data due to error: {result.error}")
+                self.last_fetched_game_id -= 1
                 results.append(result)
                 break
             results.append(result)
@@ -143,11 +168,9 @@ class EuroleagueDataConnector:
         Saves dictionary data in .json format into s3 bucket
         """
 
-        s3 = boto3.client('s3')
-
         try:
             json_data = json.dumps(data, indent=4)
-            s3.put_object(Bucket=bucket, Key=key, Body=json_data, ContentType='application/json')
+            self.s3.put_object(Bucket=bucket, Key=key, Body=json_data, ContentType='application/json')
             return True
         except (BotoCoreError, ClientError, Exception) as e:
             print(f"Error saving JSON to s3://{bucket}/{key}: {e}")
