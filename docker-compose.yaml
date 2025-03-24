@@ -132,6 +132,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    env_file:
+      - .env
 
   airflow-scheduler:
     <<: *airflow-common
@@ -147,6 +149,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    env_file:
+      - .env
 
   airflow-worker:
     <<: *airflow-common
@@ -187,6 +191,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    env_file:
+      - .env
 
   airflow-init:
     <<: *airflow-common

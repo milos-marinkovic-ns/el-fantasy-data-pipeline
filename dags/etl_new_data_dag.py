@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from data_pipeline.euroleague_data_connector import EuroleagueDataConnector
+from data_pipeline.euroleague_data_etl import EuroleagueDataETL
 
 
 default_args = {
@@ -19,13 +20,15 @@ def fetch_new_data():
 
 def transform_new_data():
     print("Transforming new data...")
+    etl = EuroleagueDataETL()
+    etl.transform_new_box_score_data('euroleague-boxscore-data', 'data/boxscore_json')
 
 with DAG(
     dag_id='euroleague_etl_new_data',
     default_args=default_args,
     description='ETL tasks for Euroleague data every 5 days',
     schedule_interval=timedelta(days=5),
-    start_date=datetime(2025, 3, 22, 0, 0),
+    start_date=datetime(2025, 1, 1, 0, 0),
     catchup=False,
 ) as dag:
 

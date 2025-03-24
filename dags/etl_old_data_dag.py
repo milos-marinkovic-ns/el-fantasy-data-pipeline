@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from data_pipeline.euroleague_data_connector import EuroleagueDataConnector
+from data_pipeline.euroleague_data_etl import EuroleagueDataETL
 
 
 default_args = {
@@ -16,7 +17,9 @@ def fetch_old_data():
     etc.fetch_old_box_score_data()
 
 def transform_old_data():
-    print("Transforming old data...")
+    etl = EuroleagueDataETL()
+    etl.transform_old_box_score_data('euroleague-boxscore-data', 'data/boxscore_json')
+    
 
 with DAG(
     dag_id='euroleague_etl_old_data',
