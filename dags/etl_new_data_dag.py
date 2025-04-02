@@ -3,6 +3,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from data_pipeline.euroleague_data_connector import EuroleagueDataConnector
 from data_pipeline.euroleague_data_etl import EuroleagueDataETL
+from data_pipeline.model_training import train_flow
 
 
 default_args = {
@@ -23,6 +24,11 @@ def transform_new_data():
     etl = EuroleagueDataETL()
     etl.transform_new_box_score_data('euroleague-boxscore-data', 'data/boxscore_json')
 
+def train_data():
+    print("Training on new data...")
+    train_flow()
+    
+
 with DAG(
     dag_id='euroleague_etl_new_data',
     default_args=default_args,
@@ -42,4 +48,10 @@ with DAG(
         python_callable=transform_new_data
     )
 
-    task_fetch_new >> task_transform_new
+    task_train_new = PythonOperator(
+        task_id='train_new_data',
+        python_callable=train_data
+    )
+
+    task_fetch_new >> task_transform_new >> task_train_new
+    
